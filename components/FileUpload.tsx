@@ -18,6 +18,13 @@ export default function FileUpload({ sessionId, onUploadSuccess, onUploadError }
         if (acceptedFiles.length === 0) return;
 
         const file = acceptedFiles[0];
+
+        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+        if (file.size > MAX_FILE_SIZE) {
+            onUploadError('File too large. Maximum 10MB allowed.');
+            return;
+        }
+
         setSelectedFile(file);
         setIsUploading(true);
 
@@ -26,7 +33,8 @@ export default function FileUpload({ sessionId, onUploadSuccess, onUploadError }
         formData.append('session_id', sessionId);
 
         try {
-            const res = await fetch('http://localhost:8000/upload', {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            const res = await fetch(`${apiUrl}/upload`, {
                 method: 'POST',
                 body: formData,
             });
@@ -46,7 +54,7 @@ export default function FileUpload({ sessionId, onUploadSuccess, onUploadError }
 
             const data = await res.json();
 
-            if (!data.chunk_count) {
+            if (data.chunk_count === undefined || data.chunk_count === null) {
                 setIsUploading(false);
                 onUploadError('Invalid response from server: Missing chunk_count data.');
                 return;
@@ -55,7 +63,7 @@ export default function FileUpload({ sessionId, onUploadSuccess, onUploadError }
             setIsUploading(false);
             onUploadSuccess(data.chunk_count);
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('[Upload Error]', err);
             setIsUploading(false);
             onUploadError('Connection failed. Check your network or verify the backend is running.');
