@@ -1,9 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import FileUpload from '@/components/FileUpload';
+import ChatWindow, { Message } from '@/components/ChatWindow';
+import MessageInput from '@/components/MessageInput';
+import ThinkingIndicator from '@/components/ThinkingIndicator';
 
 export default function ChatbotPage() {
   // Generate a stable session ID on first load
@@ -23,6 +26,115 @@ export default function ChatbotPage() {
   const handleUploadError = (message: string) => {
     setErrorMessage(message);
     setStatus('error');
+  };
+
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isChatLoading, setIsChatLoading] = useState<boolean>(false);
+  const streamIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Security: Cleanup interval on unmount to prevent streaming memory leaks
+  useEffect(() => {
+    return () => {
+      if (streamIntervalRef.current) clearInterval(streamIntervalRef.current);
+    };
+  }, []);
+
+  const handleSendMessage = async (text: string) => {
+    if (!text.trim()) return;
+
+    if (!chunkCount) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: 'Please upload a document first.',
+          timestamp: new Date()
+        }
+      ]);
+      return;
+    }
+
+    const userMessage: Message = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content: text,
+      timestamp: new Date()
+    };
+
+    const assistantId = crypto.randomUUID();
+    const assistantPlaceholder: Message = {
+      id: assistantId,
+      role: 'assistant',
+      content: '', // Starts empty for Thinking indicator
+      timestamp: new Date()
+    };
+
+    setMessages((prev) => [...prev, userMessage, assistantPlaceholder]);
+    setIsChatLoading(true);
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const formattedHistory = messages.map(m => ({
+        role: m.role,
+        content: m.content
+      }));
+
+      const payload = {
+        question: text,
+        session_id: sessionId,
+        chat_history: formattedHistory
+      };
+
+      const res = await fetch(`${apiUrl}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        throw new Error(`Server returned ${res.status}`);
+      }
+
+      const data = await res.json();
+      const fullAnswer = data.answer || '';
+      const sources = data.sources || [];
+
+      // Simulated Streaming implementation
+      let currentIndex = 0;
+
+      streamIntervalRef.current = setInterval(() => {
+        // Jump 2-4 characters to simulate LLM token streams
+        const nextIndex = Math.min(currentIndex + Math.floor(Math.random() * 3) + 2, fullAnswer.length);
+        const currentText = fullAnswer.substring(0, nextIndex);
+
+        setMessages((prev) => prev.map(msg =>
+          msg.id === assistantId ? { ...msg, content: currentText } : msg
+        ));
+
+        currentIndex = nextIndex;
+
+        if (currentIndex >= fullAnswer.length) {
+          if (streamIntervalRef.current) clearInterval(streamIntervalRef.current);
+          streamIntervalRef.current = null;
+
+          setMessages((prev) => prev.map(msg =>
+            msg.id === assistantId ? { ...msg, sources } : msg
+          ));
+          setIsChatLoading(false);
+        }
+      }, 30);
+
+    } catch (err: unknown) {
+      if (streamIntervalRef.current) clearInterval(streamIntervalRef.current);
+      setMessages((prev) => prev.map(msg =>
+        msg.id === assistantId ? {
+          ...msg,
+          content: 'Error: Failed to connect to the knowledge base. Please try again later.'
+        } : msg
+      ));
+      setIsChatLoading(false);
+    }
   };
 
   return (
@@ -62,16 +174,21 @@ export default function ChatbotPage() {
           <CardTitle className="text-lg font-bold">Chat</CardTitle>
         </CardHeader>
 
-        <CardContent className="flex-1 bg-slate-50/50 p-4 overflow-y-auto">
-          <div className="flex items-center justify-center h-full text-slate-500 text-sm">
-            [ Chat messages area ]
-          </div>
+        <CardContent className="flex-1 bg-slate-50/50 p-4 overflow-y-auto overflow-x-hidden flex flex-col">
+          <ChatWindow messages={messages} />
+
+          {isChatLoading && (
+            <div className="mt-2 w-full">
+              <ThinkingIndicator
+                isLoading={isChatLoading}
+                hasStartedStreaming={messages.length > 0 && messages[messages.length - 1].content.length > 0}
+              />
+            </div>
+          )}
         </CardContent>
 
         <div className="p-4 bg-white border-t border-slate-100">
-          <div className="bg-slate-50 border border-slate-300 rounded-lg p-4 text-slate-500 text-sm">
-            [ Input bar ]
-          </div>
+          <MessageInput onSend={handleSendMessage} isLoading={isChatLoading} />
         </div>
       </Card>
 
