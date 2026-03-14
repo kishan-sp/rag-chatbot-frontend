@@ -4,20 +4,24 @@ import { FileText } from 'lucide-react';
 
 interface SourceCardProps {
     source: Source;
+    index: number;
+    onClick: (source: Source) => void;
 }
 
-export default function SourceCard({ source }: SourceCardProps) {
+export default function SourceCard({ source, index, onClick }: SourceCardProps) {
     return (
-        <div className="mt-2 ml-2 bg-slate-50 border border-slate-200 rounded-md p-3 max-w-[90%] sm:max-w-[80%]">
-            <div className="flex items-center gap-2 mb-1">
-                <FileText className="w-3 h-3 text-slate-500" />
-                <span className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                    Page {source.page_number}
-                </span>
-            </div>
-            <p className="text-xs text-slate-500 italic whitespace-pre-wrap break-words border-l-2 border-slate-300 pl-2">
-                "{source.snippet}..."
-            </p>
-        </div>
+        <button
+            onClick={() => onClick(source)}
+            className="inline-flex items-center gap-1.5 px-2 py-1 bg-secondary hover:bg-accent border border-border rounded-md text-[11px] font-medium text-muted-foreground transition-colors cursor-pointer mr-2 mb-2 group shadow-sm"
+            title={`${source.file_name}, Page ${source.page}`}
+        >
+            <FileText className="w-3 h-3 text-primary group-hover:text-primary transition-colors" />
+            <span className="truncate max-w-[120px]">
+                [{index + 1}] {source.file_name}
+            </span>
+            <span className="opacity-60 font-mono text-[9px]">
+                p.{source.page}
+            </span>
+        </button>
     );
 }

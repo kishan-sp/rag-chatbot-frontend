@@ -147,84 +147,106 @@ export default function ChatbotPage() {
     }
   };
 
+  // Dynamic Header Title (First Question)
+  const firstQuestion = messages.find(m => m.role === 'user')?.content || 'New Session';
+
   return (
-    <div className="flex h-screen w-full bg-slate-50 p-4 gap-4">
+    <div className="flex h-screen w-full bg-background text-foreground overflow-hidden">
 
-      {/* Sidebar Panel */}
-      <Card className="w-80 flex flex-col shadow-md rounded-xl border border-slate-200">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-bold">Document Knowledge</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4 flex-1">
-          <FileUpload
-            sessionId={sessionId}
-            onUploadSuccess={handleUploadSuccess}
-            onUploadError={handleUploadError}
-            onSessionId={setSessionId}
-          />
+      {/* Sidebar - Document Management */}
+      <aside className="w-80 border-r border-border bg-background flex flex-col hidden lg:flex">
+        <div className="p-6 border-b border-border">
+          <h1 className="text-xl font-bold tracking-tight">RAG Chatbot</h1>
+        </div>
+        
+        <div className="p-6 flex-1 flex flex-col gap-6 overflow-y-auto">
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60">Knowledge Base</h3>
+            <FileUpload
+              sessionId={sessionId}
+              onUploadSuccess={handleUploadSuccess}
+              onUploadError={handleUploadError}
+              onSessionId={setSessionId}
+            />
+          </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="space-y-4">
             {status === 'ready' && (
-              <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200 text-sm py-1.5 px-3">
-                Document ready — {chunkCount} sections indexed. Ask anything.
-              </Badge>
+              <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 animate-in fade-in slide-in-from-top-2 duration-300">
+                <p className="text-xs font-bold text-primary mb-1 uppercase tracking-wider">Document Ready</p>
+                <p className="text-sm text-slate-700 leading-relaxed">
+                  We've indexed <span className="font-bold text-primary">{chunkCount}</span> sections. You can now ask detailed questions.
+                </p>
+              </div>
             )}
 
             {status === 'error' && (
-              <Badge variant="destructive" className="whitespace-normal py-1.5 px-3">
-                {errorMessage}
-              </Badge>
+              <div className="p-4 rounded-2xl bg-destructive/5 border border-destructive/10 animate-in fade-in slide-in-from-top-2 duration-300">
+                <p className="text-xs font-bold text-destructive mb-1 uppercase tracking-wider">Upload Error</p>
+                <p className="text-sm text-destructive/80 leading-relaxed">
+                  {errorMessage}
+                </p>
+              </div>
+            )}
+            
+            {apiKeyError && (
+              <div className="p-4 rounded-2xl bg-destructive/10 border border-destructive/20 animate-in shake-in duration-300">
+                <p className="text-xs font-bold text-destructive mb-1 uppercase tracking-wider">API Configuration Error</p>
+                <p className="text-sm text-destructive/80 mb-3 leading-relaxed">
+                  Invalid GROQ_API_KEY. Please verify your backend .env file.
+                </p>
+                <button
+                  onClick={() => setApiKeyError(false)}
+                  className="text-[10px] font-bold text-destructive underline uppercase tracking-widest hover:text-destructive/60"
+                >
+                  Dismiss
+                </button>
+              </div>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Main Chat Panel */}
-      <Card className="flex flex-1 flex-col shadow-md rounded-xl border border-slate-200 overflow-hidden">
-        <CardHeader className="bg-white border-b border-slate-100 z-10">
-          <CardTitle className="text-lg font-bold">Chat</CardTitle>
+        <div className="p-6 border-t border-border mt-auto h-12 flex items-center">
+           {/* Footer removed per user request */}
+        </div>
+      </aside>
 
-          {/* Task 6.2 — Dismissible API key error banner */}
-          {apiKeyError && (
-            <div className="mt-2 flex items-start justify-between gap-2 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">
-              <span>
-                <strong>Backend configuration error:</strong> Invalid API key. Please check the{' '}
-                <code className="font-mono text-xs">GROQ_API_KEY</code> in your backend{' '}
-                <code className="font-mono text-xs">.env</code> file.
-              </span>
-              <button
-                aria-label="Dismiss error"
-                onClick={() => setApiKeyError(false)}
-                className="ml-2 shrink-0 text-red-500 hover:text-red-700 font-bold text-base leading-none"
-              >
-                &times;
-              </button>
-            </div>
-          )}
-        </CardHeader>
+      {/* Main Chat Area */}
+      <main className="flex-1 flex flex-col relative h-full max-w-4xl mx-auto border-x border-border/40 bg-background shadow-2xl">
+        {/* Header - Minimal & Dynamic */}
+        <header className="h-16 flex items-center px-8 border-b border-border/40 bg-background/50 backdrop-blur-md z-20">
+          <div className="flex items-center gap-3 w-full">
+            <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0"></div>
+            <h2 className="text-sm font-bold text-slate-800 tracking-tight truncate pr-4">
+              {firstQuestion}
+            </h2>
+          </div>
+        </header>
 
-        <CardContent className="flex-1 bg-slate-50/50 p-4 overflow-y-auto overflow-x-hidden flex flex-col">
+        {/* Chat window - scrolls */}
+        <div className="flex-1 overflow-y-auto px-8 py-10 scroll-smooth">
           <ChatWindow messages={messages} />
 
           {isChatLoading && (
-            <div className="mt-2 w-full">
+            <div className="mt-6 flex justify-start">
               <ThinkingIndicator
                 isLoading={isChatLoading}
                 hasStartedStreaming={messages.length > 0 && messages[messages.length - 1].content.length > 0}
               />
             </div>
           )}
-        </CardContent>
+        </div>
 
-        {/* Task 6.3 — Disable input when apiKeyError is true */}
-        <div className={`p-4 bg-white border-t border-slate-100 ${apiKeyError ? 'opacity-50' : ''}`}>
+        {/* Message Input - Fixed/Floating effect */}
+        <div className={`z-20 transition-all duration-300 ${apiKeyError ? 'grayscale pointer-events-none' : ''}`}>
           <MessageInput
             onSend={handleSendMessage}
             isLoading={isChatLoading}
             disabled={apiKeyError}
+            sessionId={sessionId}
           />
         </div>
-      </Card>
+      </main>
 
     </div>
   );

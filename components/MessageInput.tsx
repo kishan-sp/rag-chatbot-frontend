@@ -7,12 +7,13 @@ interface MessageInputProps {
     onSend: (message: string) => void;
     isLoading: boolean;
     disabled?: boolean;
+    sessionId: string;
 }
 
 const MAX_LENGTH = 500;
 const WARN_THRESHOLD = 450;
 
-export default function MessageInput({ onSend, isLoading, disabled = false }: MessageInputProps) {
+export default function MessageInput({ onSend, isLoading, disabled = false, sessionId }: MessageInputProps) {
     const [input, setInput] = useState('');
     const [lengthError, setLengthError] = useState('');
 
@@ -47,12 +48,11 @@ export default function MessageInput({ onSend, isLoading, disabled = false }: Me
     };
 
     return (
-        <div className="flex flex-col w-full gap-1">
-            <div className="flex items-end gap-2 w-full">
-                {/* Task 5.1 — maxLength={500} */}
+        <div className="flex flex-col w-full max-w-3xl mx-auto px-4 pb-4">
+            <div className={`relative flex flex-col bg-white border border-border shadow-sm rounded-2xl transition-all ${isDisabled ? 'opacity-60 overflow-hidden' : 'focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-primary/5 focus-within:shadow-md'}`}>
                 <textarea
-                    className={`flex-1 min-h-[44px] max-h-32 p-3 bg-transparent border-none focus:outline-none resize-none overflow-y-auto text-sm ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    placeholder="Type a message..."
+                    className="w-full min-h-[50px] max-h-48 p-4 bg-transparent border-none focus:outline-none resize-none overflow-y-auto text-sm text-foreground leading-relaxed placeholder:text-muted-foreground/60"
+                    placeholder="Ask questions about your document..."
                     value={input}
                     onChange={handleChange}
                     onKeyDown={handleKeyDown}
@@ -60,31 +60,33 @@ export default function MessageInput({ onSend, isLoading, disabled = false }: Me
                     maxLength={MAX_LENGTH}
                     rows={1}
                 />
-                <button
-                    onClick={handleSend}
-                    disabled={isDisabled || !input.trim()}
-                    className={`p-2 rounded-lg mb-1 flex-shrink-0 transition-colors ${isDisabled || !input.trim()
-                            ? 'text-slate-300 bg-slate-100 cursor-not-allowed'
-                            : 'text-white bg-blue-600 hover:bg-blue-700'
-                        }`}
-                >
-                    <Send className="w-4 h-4" />
-                </button>
+                
+                <div className="flex items-center justify-between px-4 pb-2">
+                    <div className="flex items-center gap-2">
+                        {lengthError ? (
+                            <span className="text-[10px] text-destructive font-medium">{lengthError}</span>
+                        ) : (
+                            <span className={`text-[10px] ${currentLength >= WARN_THRESHOLD ? 'text-destructive font-medium' : 'text-muted-foreground/40 font-mono'}`}>
+                                {currentLength}/{MAX_LENGTH}
+                            </span>
+                        )}
+                    </div>
+                    
+                    <button
+                        onClick={handleSend}
+                        disabled={isDisabled || !input.trim()}
+                        className={`p-1.5 rounded-xl transition-all duration-200 ${isDisabled || !input.trim()
+                                ? 'text-muted-foreground/20'
+                                : 'text-primary hover:bg-primary/5'
+                            }`}
+                    >
+                        <Send className="w-5 h-5" />
+                    </button>
+                </div>
             </div>
-
-            {/* Task 5.2 — Live character counter */}
-            <div className="flex justify-between items-center px-1">
-                {lengthError ? (
-                    <span className="text-xs text-red-500">{lengthError}</span>
-                ) : (
-                    <span />
-                )}
-                <span
-                    className={`text-xs ml-auto ${currentLength >= WARN_THRESHOLD ? 'text-red-500 font-medium' : 'text-slate-400'}`}
-                >
-                    {currentLength}/{MAX_LENGTH}
-                </span>
-            </div>
+            <p className="text-[10px] text-muted-foreground/40 text-center mt-2 font-medium uppercase tracking-widest">
+                Chatting with {sessionId ? 'Document' : 'No Document'}
+            </p>
         </div>
     );
 }

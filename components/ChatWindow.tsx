@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import SourceCard from './SourceCard';
+import CitationModal from './CitationModal';
 
 export interface Source {
-    page_number: number;
+    file_name: string;
+    page: number;
     snippet: string;
 }
 
@@ -26,6 +28,7 @@ function formatTime(date: Date): string {
 
 export default function ChatWindow({ messages }: ChatWindowProps) {
     const bottomRef = useRef<HTMLDivElement>(null);
+    const [selectedSource, setSelectedSource] = useState<Source | null>(null);
 
     // Auto-scroll to bottom when messages change
     useEffect(() => {
@@ -48,14 +51,10 @@ export default function ChatWindow({ messages }: ChatWindowProps) {
                         >
                             <div
                                 className={`px-4 py-2.5 rounded-2xl max-w-[85%] sm:max-w-[75%] shadow-sm whitespace-pre-wrap break-words text-sm ${isUser
-                                    ? 'bg-blue-600 text-white rounded-tr-sm'
+                                    ? 'bg-primary text-white rounded-tr-sm'
                                     : 'bg-white border border-slate-200 text-slate-800 rounded-tl-sm'
                                     }`}
                             >
-                                {/* 
-                  Security Requirement: Render content strictly as plain text. 
-                  React natively escapes strings. Absolutely no dangerouslySetInnerHTML.
-                */}
                                 {message.content}
                             </div>
 
@@ -63,11 +62,16 @@ export default function ChatWindow({ messages }: ChatWindowProps) {
                                 {formatTime(message.timestamp)}
                             </div>
 
-                            {/* Source cards */}
+                            {/* Source chips */}
                             {!isUser && message.sources && message.sources.length > 0 && (
-                                <div className="mt-1 w-full space-y-2">
+                                <div className="mt-2 flex flex-wrap max-w-full">
                                     {message.sources.map((source, idx) => (
-                                        <SourceCard key={idx} source={source} />
+                                        <SourceCard 
+                                            key={idx} 
+                                            source={source} 
+                                            index={idx} 
+                                            onClick={setSelectedSource} 
+                                        />
                                     ))}
                                 </div>
                             )}
@@ -75,6 +79,13 @@ export default function ChatWindow({ messages }: ChatWindowProps) {
                     );
                 })
             )}
+            
+            {/* Citation Modal */}
+            <CitationModal 
+                source={selectedSource} 
+                onClose={() => setSelectedSource(null)} 
+            />
+
             {/* Dummy div for auto-scroll target */}
             <div ref={bottomRef} className="h-px" />
         </div>
