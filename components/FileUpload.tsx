@@ -8,9 +8,10 @@ interface FileUploadProps {
     sessionId: string;
     onUploadSuccess: (chunkCount: number) => void;
     onUploadError: (message: string) => void;
+    onSessionId: (sessionId: string) => void;
 }
 
-export default function FileUpload({ sessionId, onUploadSuccess, onUploadError }: FileUploadProps) {
+export default function FileUpload({ sessionId, onUploadSuccess, onUploadError, onSessionId }: FileUploadProps) {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState<boolean>(false);
 
@@ -19,18 +20,22 @@ export default function FileUpload({ sessionId, onUploadSuccess, onUploadError }
 
         const file = acceptedFiles[0];
 
-        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+        const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
         if (file.size > MAX_FILE_SIZE) {
-            onUploadError('File too large. Maximum 10MB allowed.');
+            onUploadError('File too large. Maximum 15MB allowed.');
             return;
         }
 
         setSelectedFile(file);
         setIsUploading(true);
 
+        // Generate a fresh session ID for this upload and push it to parent
+        const newSessionId = crypto.randomUUID();
+        onSessionId(newSessionId);
+
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('session_id', sessionId);
+        formData.append('session_id', newSessionId);
 
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';

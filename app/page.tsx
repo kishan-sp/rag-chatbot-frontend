@@ -9,8 +9,8 @@ import MessageInput from '@/components/MessageInput';
 import ThinkingIndicator from '@/components/ThinkingIndicator';
 
 export default function ChatbotPage() {
-  // Generate a stable session ID on first load
-  const [sessionId] = useState<string>(() => crypto.randomUUID());
+  // Session ID — starts empty, set after first successful upload
+  const [sessionId, setSessionId] = useState<string>('');
 
   // Status boundaries for the Chat component layout
   const [status, setStatus] = useState<'idle' | 'uploading' | 'ready' | 'error'>('idle');
@@ -31,6 +31,9 @@ export default function ChatbotPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isChatLoading, setIsChatLoading] = useState<boolean>(false);
   const streamIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Task 6.1 — API key error state
+  const [apiKeyError, setApiKeyError] = useState<boolean>(false);
 
   // Security: Cleanup interval on unmount to prevent streaming memory leaks
   useEffect(() => {
@@ -93,6 +96,10 @@ export default function ChatbotPage() {
       });
 
       if (!res.ok) {
+        // Task 6.1 — Detect 401 and set apiKeyError
+        if (res.status === 401) {
+          setApiKeyError(true);
+        }
         throw new Error(`Server returned ${res.status}`);
       }
 
@@ -127,10 +134,13 @@ export default function ChatbotPage() {
 
     } catch (err: unknown) {
       if (streamIntervalRef.current) clearInterval(streamIntervalRef.current);
+      const errMsg = err instanceof Error && err.message.includes('401')
+        ? 'Error: API authentication failed. Please check the backend API key configuration.'
+        : 'Error: Failed to connect to the knowledge base. Please try again later.';
       setMessages((prev) => prev.map(msg =>
         msg.id === assistantId ? {
           ...msg,
-          content: 'Error: Failed to connect to the knowledge base. Please try again later.'
+          content: errMsg
         } : msg
       ));
       setIsChatLoading(false);
@@ -150,6 +160,7 @@ export default function ChatbotPage() {
             sessionId={sessionId}
             onUploadSuccess={handleUploadSuccess}
             onUploadError={handleUploadError}
+            onSessionId={setSessionId}
           />
 
           <div className="flex flex-col gap-2">
@@ -172,6 +183,24 @@ export default function ChatbotPage() {
       <Card className="flex flex-1 flex-col shadow-md rounded-xl border border-slate-200 overflow-hidden">
         <CardHeader className="bg-white border-b border-slate-100 z-10">
           <CardTitle className="text-lg font-bold">Chat</CardTitle>
+
+          {/* Task 6.2 — Dismissible API key error banner */}
+          {apiKeyError && (
+            <div className="mt-2 flex items-start justify-between gap-2 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">
+              <span>
+                <strong>Backend configuration error:</strong> Invalid API key. Please check the{' '}
+                <code className="font-mono text-xs">GROQ_API_KEY</code> in your backend{' '}
+                <code className="font-mono text-xs">.env</code> file.
+              </span>
+              <button
+                aria-label="Dismiss error"
+                onClick={() => setApiKeyError(false)}
+                className="ml-2 shrink-0 text-red-500 hover:text-red-700 font-bold text-base leading-none"
+              >
+                &times;
+              </button>
+            </div>
+          )}
         </CardHeader>
 
         <CardContent className="flex-1 bg-slate-50/50 p-4 overflow-y-auto overflow-x-hidden flex flex-col">
@@ -187,8 +216,13 @@ export default function ChatbotPage() {
           )}
         </CardContent>
 
-        <div className="p-4 bg-white border-t border-slate-100">
-          <MessageInput onSend={handleSendMessage} isLoading={isChatLoading} />
+        {/* Task 6.3 — Disable input when apiKeyError is true */}
+        <div className={`p-4 bg-white border-t border-slate-100 ${apiKeyError ? 'opacity-50' : ''}`}>
+          <MessageInput
+            onSend={handleSendMessage}
+            isLoading={isChatLoading}
+            disabled={apiKeyError}
+          />
         </div>
       </Card>
 
