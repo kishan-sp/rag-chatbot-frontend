@@ -1,4 +1,4 @@
-import React from 'react';
+import { TypingAnimation } from './ui/typing-animation';
 
 interface ThinkingIndicatorProps {
     isLoading: boolean;
@@ -11,10 +11,13 @@ export default function ThinkingIndicator({ isLoading, hasStartedStreaming }: Th
 
     return (
         <div className="flex flex-col items-start max-w-full">
-            <div className="px-5 py-4 bg-white border border-slate-200 text-slate-800 rounded-2xl rounded-tl-sm shadow-sm flex items-center gap-1.5 w-fit">
-                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"></div>
+            <div className="px-5 py-4 bg-white border border-slate-200 text-slate-800 rounded-2xl rounded-tl-sm shadow-sm flex items-center w-fit">
+                <TypingAnimation 
+                    className="text-sm text-slate-500 font-normal"
+                    duration={100}
+                >
+                    Thinking...
+                </TypingAnimation>
             </div>
         </div>
     );

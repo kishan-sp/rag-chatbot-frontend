@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import FileUpload from '@/components/FileUpload';
 import ChatWindow, { Message } from '@/components/ChatWindow';
 import MessageInput from '@/components/MessageInput';
-import ThinkingIndicator from '@/components/ThinkingIndicator';
 
 export default function ChatbotPage() {
   // Session ID — starts empty, set after first successful upload
@@ -171,17 +170,17 @@ export default function ChatbotPage() {
           </div>
 
           <div className="space-y-4">
-            {status === 'ready' && (
-              <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 animate-in fade-in slide-in-from-top-2 duration-300">
+            {status === 'ready' && chunkCount !== null && (
+              <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10">
                 <p className="text-xs font-bold text-primary mb-1 uppercase tracking-wider">Document Ready</p>
-                <p className="text-sm text-slate-700 leading-relaxed">
+                <div className="text-sm text-slate-700 leading-relaxed">
                   We've indexed <span className="font-bold text-primary">{chunkCount}</span> sections. You can now ask detailed questions.
-                </p>
+                </div>
               </div>
             )}
 
             {status === 'error' && (
-              <div className="p-4 rounded-2xl bg-destructive/5 border border-destructive/10 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="p-4 rounded-2xl bg-destructive/5 border border-destructive/10">
                 <p className="text-xs font-bold text-destructive mb-1 uppercase tracking-wider">Upload Error</p>
                 <p className="text-sm text-destructive/80 leading-relaxed">
                   {errorMessage}
@@ -190,7 +189,7 @@ export default function ChatbotPage() {
             )}
             
             {apiKeyError && (
-              <div className="p-4 rounded-2xl bg-destructive/10 border border-destructive/20 animate-in shake-in duration-300">
+              <div className="p-4 rounded-2xl bg-destructive/10 border border-destructive/20 animate-in shake-in">
                 <p className="text-xs font-bold text-destructive mb-1 uppercase tracking-wider">API Configuration Error</p>
                 <p className="text-sm text-destructive/80 mb-3 leading-relaxed">
                   Invalid GROQ_API_KEY. Please verify your backend .env file.
@@ -227,14 +226,6 @@ export default function ChatbotPage() {
         <div className="flex-1 overflow-y-auto px-8 py-10 scroll-smooth">
           <ChatWindow messages={messages} />
 
-          {isChatLoading && (
-            <div className="mt-6 flex justify-start">
-              <ThinkingIndicator
-                isLoading={isChatLoading}
-                hasStartedStreaming={messages.length > 0 && messages[messages.length - 1].content.length > 0}
-              />
-            </div>
-          )}
         </div>
 
         {/* Message Input - Fixed/Floating effect */}

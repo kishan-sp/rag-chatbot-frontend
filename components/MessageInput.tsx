@@ -75,12 +75,13 @@ export default function MessageInput({ onSend, isLoading, disabled = false, sess
                     <button
                         onClick={handleSend}
                         disabled={isDisabled || !input.trim()}
-                        className={`p-1.5 rounded-xl transition-all duration-200 ${isDisabled || !input.trim()
-                                ? 'text-muted-foreground/20'
-                                : 'text-primary hover:bg-primary/5'
+                        className={`p-2 rounded-xl h-9 w-9 flex items-center justify-center transition-all duration-200 ${isDisabled || !input.trim()
+                                ? 'bg-slate-100 text-slate-300 cursor-not-allowed opacity-50'
+                                : 'bg-primary text-white hover:bg-primary/90 hover:shadow-lg hover:scale-105 active:scale-95 shadow-md flex-shrink-0'
                             }`}
+                        title="Send message"
                     >
-                        <Send className="w-5 h-5" />
+                        <Send className="w-4 h-4" />
                     </button>
                 </div>
             </div>

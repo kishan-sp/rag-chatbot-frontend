@@ -91,12 +91,12 @@ export default function FileUpload({ sessionId, onUploadSuccess, onUploadError, 
                 <div
                     {...getRootProps()}
                     className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors ${isDragActive
-                        ? 'border-blue-500 bg-blue-50'
+                        ? 'border-primary/50 bg-primary/5'
                         : 'border-slate-300 hover:border-slate-400 bg-slate-50'
                         }`}
                 >
                     <input {...getInputProps()} />
-                    <UploadCloud className={`h-8 w-8 mb-2 ${isDragActive ? 'text-blue-500' : 'text-slate-400'}`} />
+                    <UploadCloud className={`h-8 w-8 mb-2 ${isDragActive ? 'text-primary' : 'text-slate-400'}`} />
                     <p className="text-sm font-medium text-slate-700">
                         {isDragActive ? "Drop the file here..." : "Drag & drop a file here"}
                     </p>
